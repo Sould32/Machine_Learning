@@ -23,9 +23,9 @@ def cross_validate(trainer, predictor, all_data, all_labels, folds, params):
     :return: tuple containing the average score and the learned models from each fold
     :rtype: tuple
     """
-    scores = np.zeros(folds)
+    scores = np.zeros(folds)#will hold score for each fold
 
-    d, n = all_data.shape
+    d, n = all_data.shape #d=rows, n=column
 
     indices = np.array(range(n), dtype=int)
 
@@ -40,8 +40,36 @@ def cross_validate(trainer, predictor, all_data, all_labels, folds, params):
 
     models = []
 
-    # TODO: INSERT YOUR CODE FOR CROSS VALIDATION HERE
-
+    row, col = indices.shape
+    
+    for i in range(col):
+        #switch column at index 0 with column to hold for tests
+        indices[:,[0,i]] = indices[:, [i,0]]
+        #test indices
+        test_indices = indices[:, 0]
+        #training indices
+        train_indices = indices[:, 1:col].ravel()
+        #switch columns back to their original positions
+        indices[:,[0,i]] = indices[:, [i,0]]
+        #extract test data 
+        test_data = all_data[:, test_indices]
+        #extract test labels
+        test_labels = all_labels[test_indices]
+        #extract train data 
+        train_data = all_data[:, train_indices]
+        #extract train labels
+        train_labels = all_labels[train_indices]
+        #train on train data and train labels and return a model
+        model = trainer(train_data, train_labels, params)
+        #append model to models array
+        models.append(model)
+        #compute labels using predictor function
+        labels = predictor(test_data, model)
+        #compute accuracy of labels returned by model
+        dt_accuracy = np.mean(labels == test_labels)
+        #append accuracy to list of scores
+        scores[i] = dt_accuracy
+        
     score = np.mean(scores)
 
     return score, models
