@@ -69,26 +69,25 @@ def calculate_information_gain(data, labels):
 
     return gain.ravel()
 
-def d_all_one_class(data, labels, num_classes):
-    
+def d_all_one_class(data, labels, num_classes, unique_labels):
     class_count_c = 0
     d, n = data.shape # (row, column) initial value is (5000, 11,269)
     most_c = None
     cur_max = -1
     for c in range(num_classes):
-        class_count_c = np.sum(labels == c)
+        class_count_c = np.sum(labels == unique_labels[c])
         if (class_count_c >= n):
             most_c = c
             return (True, most_c)
         if(cur_max <= class_count_c):
             cur_max = class_count_c
-            most_c = c
+            most_c = unique_labels[c]
     return (False, most_c)
 
     
-def rec_tree_train (data, labels, depth, max_depth, num_classes, node):
-    result, most_c = d_all_one_class(data, labels, num_classes)
-    rule = calculate_information_gain (data, labels)
+def rec_tree_train (data, labels, depth, max_depth, num_classes, node, unique_labels):
+    result, most_c = d_all_one_class(data, labels, num_classes, unique_labels)
+    rule = calculate_information_gain(data, labels)
     ranks = rule.argsort()[::-1]
     new_root = ranks[0]
     node[new_root] = {"prediction": None, "l_child": {}, "r_child": {}}
@@ -96,7 +95,6 @@ def rec_tree_train (data, labels, depth, max_depth, num_classes, node):
         node[new_root] = {"prediction":most_c, "l_child": {}, "r_child": {}}
         return node
         
-    
     #grabs the boolean values related to the feature at row 0 which represent the feature with the higest gain
     positive_bool_array = data[new_root,:].toarray().ravel()
     #compute the inverse of that array 
@@ -114,9 +112,16 @@ def rec_tree_train (data, labels, depth, max_depth, num_classes, node):
     #data_right = right_split[right_rank[:5000], :]
     #increase depth
     depth += 1
+    #grab unique labels in the left split
+    unique_left = np.unique(left_labels)
+    #grab unique labels in the right split
+    unique_right = np.unique(right_labels)
     #recursive compute subtree for left and right child
-    node[new_root]["l_child"]= rec_tree_train(left_split, left_labels, depth, max_depth, left_labels.size, node[new_root]['l_child'])
-    node[new_root]["r_child"] = rec_tree_train(right_split, right_labels, depth, max_depth, right_labels.size, node[new_root]['r_child'])
+    if left_labels.size:
+        node[new_root]["l_child"]= rec_tree_train(left_split, left_labels, depth, max_depth, len(unique_left), node[new_root]['l_child'], unique_left)
+    if right_labels.size:
+        node[new_root]["r_child"] = rec_tree_train(right_split, right_labels, depth, max_depth, len(unique_right), node[new_root]['r_child'], unique_right)
+    
     return node
     
 def recursive_tree_train(data, labels, depth, max_depth, num_classes):
@@ -137,9 +142,8 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     """
     # TODO: INSERT YOUR CODE FOR LEARNING THE DECISION TREE STRUCTURE HERE
     node = dict()
-    
-    node = rec_tree_train (data, labels, depth, max_depth, num_classes, node)
-   
+    unique_labels = np.unique(labels)
+    node = rec_tree_train (data, labels, depth, max_depth, num_classes, node, unique_labels)
     return node
 
 def decision_tree_train(train_data, train_labels, params):
