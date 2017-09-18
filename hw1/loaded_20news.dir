@@ -1,0 +1,7 @@
+'num_words', (0, 113)
+'num_training', (512, 113)
+'num_testing', (1024, 113)
+'train_data', (1536, 7382215)
+'test_data', (7384064, 4869804)
+'train_labels', (12254208, 90311)
+'test_labels', (12344832, 60199)

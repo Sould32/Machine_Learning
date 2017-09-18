@@ -1,7 +1,7 @@
 """This module includes methods for training and predicting using decision trees."""
 from __future__ import division
 import numpy as np
-
+import pandas as pd
 
 def calculate_information_gain(data, labels):
     """Compute the information gain on label probability for each feature in data.
@@ -69,28 +69,61 @@ def calculate_information_gain(data, labels):
 
     return gain.ravel()
 
+def d_all_one_class(data, labels, num_classes, unique_labels):
+    class_count_c = 0
+    d, n = data.shape # (row, column) initial value is (5000, 11,269)
+    most_c = None
+    cur_max = -1
+    for c in range(num_classes):
+        class_count_c = np.sum(labels == unique_labels[c])
+        if (class_count_c >= n):
+            most_c = c
+            return (True, most_c)
+        if(cur_max <= class_count_c):
+            cur_max = class_count_c
+            most_c = unique_labels[c]
+    return (False, most_c)
 
-def decision_tree_train(train_data, train_labels, params):
-    """Train a decision tree to classify data using the entropy decision criterion.
-
-    :param train_data: d x n numpy matrix (ndarray) of d binary features for n examples
-    :type train_data: ndarray
-    :param train_labels: length n numpy vector with integer labels
-    :type train_labels: array_like
-    :param params: learning algorithm parameter dictionary. Must include a 'max_depth' value
-    :type params: dict
-    :return: dictionary encoding the learned decision tree
-    :rtype: dict
-    """
-    max_depth = params['max_depth']
-
-    labels = np.unique(train_labels)
-    num_classes = labels.size
-
-    model = recursive_tree_train(train_data, train_labels, depth=0, max_depth=max_depth, num_classes=num_classes)
-    return model
-
-
+    
+def rec_tree_train (data, labels, depth, max_depth, num_classes, node, unique_labels):
+    result, most_c = d_all_one_class(data, labels, num_classes, unique_labels)
+    rule = calculate_information_gain(data, labels)
+    ranks = rule.argsort()[::-1]
+    new_root = ranks[0]
+    node[new_root] = {"prediction": None, "l_child": {}, "r_child": {}}
+    if (depth >= max_depth or result):
+        node[new_root] = {"prediction":most_c, "l_child": {}, "r_child": {}}
+        return node
+        
+    #grabs the boolean values related to the feature at row 0 which represent the feature with the higest gain
+    positive_bool_array = data[new_root,:].toarray().ravel()
+    #compute the inverse of that array 
+    negative_bool_array = ~positive_bool_array
+    #grabs all columns where the feature is true
+    left_split = data[:, positive_bool_array]
+    #grabs all columns where the feature is false
+    right_split = data[:, negative_bool_array]
+    #compute labels for the left split (grabs all labels that corresponds to the column in the left split)
+    left_labels = labels[positive_bool_array]
+    #compute labels for the left split (grabs all labels that corresponds to the column in the right split)
+    right_labels = labels[negative_bool_array]
+    #sort data base on feature with the more gain
+    #data_left = left_split[left_rank[:5000], :]
+    #data_right = right_split[right_rank[:5000], :]
+    #increase depth
+    depth += 1
+    #grab unique labels in the left split
+    unique_left = np.unique(left_labels)
+    #grab unique labels in the right split
+    unique_right = np.unique(right_labels)
+    #recursive compute subtree for left and right child
+    if left_labels.size:
+        node[new_root]["l_child"]= rec_tree_train(left_split, left_labels, depth, max_depth, len(unique_left), node[new_root]['l_child'], unique_left)
+    if right_labels.size:
+        node[new_root]["r_child"] = rec_tree_train(right_split, right_labels, depth, max_depth, len(unique_right), node[new_root]['r_child'], unique_right)
+    
+    return node
+    
 def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     """Helper function to recursively build a decision tree by splitting the data by a feature.
 
@@ -108,9 +141,29 @@ def recursive_tree_train(data, labels, depth, max_depth, num_classes):
     :rtype: dict
     """
     # TODO: INSERT YOUR CODE FOR LEARNING THE DECISION TREE STRUCTURE HERE
-
+    node = dict()
+    unique_labels = np.unique(labels)
+    node = rec_tree_train (data, labels, depth, max_depth, num_classes, node, unique_labels)
     return node
 
+def decision_tree_train(train_data, train_labels, params):
+    """Train a decision tree to classify data using the entropy decision criterion.
+
+    :param train_data: d x n numpy matrix (ndarray) of d binary features for n examples
+    :type train_data: ndarray
+    :param train_labels: length n numpy vector with integer labels
+    :type train_labels: array_like
+    :param params: learning algorithm parameter dictionary. Must include a 'max_depth' value
+    :type params: dict
+    :return: dictionary encoding the learned decision tree
+    :rtype: dict
+    """
+    max_depth = params['max_depth']
+    labels = np.unique(train_labels)
+    num_classes = labels.size
+
+    model = recursive_tree_train(train_data, train_labels, depth=0, max_depth=max_depth, num_classes=num_classes)
+    return model
 
 def decision_tree_predict(data, model):
     """Predict most likely label given computed decision tree in model.
@@ -123,5 +176,23 @@ def decision_tree_predict(data, model):
     :rtype: array_like
     """
     # TODO: INSERT YOUR CODE FOR COMPUTING THE DECISION TREE PREDICTIONS HERE
-
+    labels = []
+    row, col = data.shape
+    for i in range(col):
+        labels.append(predict_labels(data[:,i].toarray().ravel(), model))
+    
     return labels
+def predict_labels(column, model):
+    
+    key = list(model.keys())[0]
+
+    if column[key] :
+        if model[key]['l_child']:
+            return predict_labels(column, model[key]['l_child'])
+        else:
+            return model[key]['prediction']
+    else:
+        if model[key]['r_child']:
+            return predict_labels(column, model[key]['r_child'])
+        else:
+            return model[key]['prediction']
