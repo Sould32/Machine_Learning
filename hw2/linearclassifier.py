@@ -103,7 +103,7 @@ def log_reg_train(data, labels, params, model=None, check_gradient=False):
         # TODO fill in your code here to compute the objective value (nll)
         lam = params['lambda']/2
         norm_of_weight = (np.linalg.norm(new_weights)**2) * lam
-        log_sum, sun_weight_ex = 0
+        log_sum, sun_weight_ex = 0,0
      
         for i in range(n):
             log_sum += logsumexp(np.dot(new_weights.T, data[:,i]))
@@ -112,7 +112,22 @@ def log_reg_train(data, labels, params, model=None, check_gradient=False):
         nll = (norm_of_weight + log_sum - sun_weight_ex)
 
         # TODO fill in your code here to compute the gradient
-         
+        denominator = 0
+        gradient_sum = 0
+        gradient = np.zeros(d * num_classes)
+        gradient = gradient.reshape((d, num_classes))
+        for i in range(n):
+            denominator += np.sum(np.exp(np.dot(new_weights.T, data[:,i])))
+        
+        for c in range(num_classes):
+            gradient_c = params['lambda']*new_weights[:,c]
+            for i in range(n):
+                gradient_sum += np.dot(data[:,i], ((np.exp(np.dot(new_weights[:,c].T, data[:,i]))/denominator) - i*(labels[i] == c)))
+            gradient_c += gradient_sum
+            #print(gradient.shape)
+            gradient[:,c] = gradient_c
+            gradient_sum = 0
+        print(gradient.shape)
         return nll, gradient
 
     if check_gradient:
