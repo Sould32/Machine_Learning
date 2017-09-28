@@ -21,19 +21,12 @@ def linear_predict(data, model):
     # TODO fill in your code to predict the class by finding the highest scoring linear combination of features
     weight_matrix = model['weights']
     row, column = data.shape
-    pred = np.zeros(column)
-    #print("Weighgt matrix shape: ", weight_matrix.shape)
-    #print("Weight matrix: ", weight_matrix)
-    #print("column: ", column)
-    #print("prediction array: ", pred)
-    #print("prediction size: ", pred.size)
+    pred = np.zeros(column, dtype=int)
     for i in range(column):
         example = (data[:, i]).T
-        #print("example column: ", example)
         class_scores = np.dot(example, weight_matrix)
         pred[i] = np.argmax(class_scores)
-        #print("class scores: ", class_scores)
-    #print("predictions: ", pred)
+        
     return pred
 
 def perceptron_update(data, model, label):
@@ -117,17 +110,19 @@ def log_reg_train(data, labels, params, model=None, check_gradient=False):
         gradient = np.zeros(d * num_classes)
         gradient = gradient.reshape((d, num_classes))
         for i in range(n):
-            denominator[i] = np.sum(np.exp(np.dot(new_weights.T, data[:,i])))
+            denominator[i] = np.log(np.sum(np.exp(np.dot(new_weights.T, data[:,i]))))
+        
+        precomputed_M = np.dot(new_weights.T, data)
         
         for c in range(num_classes):
             gradient_c = params['lambda']*new_weights[:,c]
-            for i in range(n):
-                gradient_sum += np.dot(data[:,i], ((np.exp(np.dot(new_weights[:,c].T, data[:,i]))/denominator[i]) - (labels[i] == c)))
+    
+            gradient_sum += np.dot(data, ((np.exp(precomputed_M[c,:]-denominator)) - (labels == c)))
             gradient_c += gradient_sum
-            #print(gradient.shape)
+            
             gradient[:,c] = gradient_c
             gradient_sum = 0
-        #print(gradient)
+        
         return nll, gradient
 
     if check_gradient:
