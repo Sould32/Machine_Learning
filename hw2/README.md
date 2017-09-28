@@ -1,0 +1,1 @@
+linearclassifyer.py - Contains functions necessary for perceptron and log likelyhood 
