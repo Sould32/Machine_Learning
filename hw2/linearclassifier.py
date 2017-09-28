@@ -110,7 +110,7 @@ def log_reg_train(data, labels, params, model=None, check_gradient=False):
         gradient = np.zeros(d * num_classes)
         gradient = gradient.reshape((d, num_classes))
         for i in range(n):
-            denominator[i] = np.log(np.sum(np.exp(np.dot(new_weights.T, data[:,i]))))
+            denominator[i] = logsumexp(np.dot(new_weights.T, data[:,i]))
         
         precomputed_M = np.dot(new_weights.T, data)
         
