@@ -154,13 +154,13 @@ class MlpSvmTest(unittest.TestCase):
         Train RBF SVM on dataset 1, which is not linearly separable.
         """
         i = 1
-        params = {'kernel': 'rbf', 'C': 1.0, 'sigma': 0.5}
+        params = {'kernel': 'rbf', 'C': 1.0, 'sigma': 1.0}
 
         rbf_svm_model = kernel_svm_train(self.train_data[i], self.train_labels[i], params)
         predictions, _ = kernel_svm_predict(self.test_data[i], rbf_svm_model)
         test_accuracy = np.mean(predictions == self.test_labels[i])
 
-        print("RBF SVM had test accuracy %2.3f (should be around 0.93)" %
+        print("RBF SVM had test accuracy %2.3f (should be around 0.92)" %
               test_accuracy)
         assert test_accuracy > 0.9, "Accuracy was below 0.9."
 
