@@ -98,7 +98,8 @@ def mlp_objective(model, data, labels, loss_function):
     weights = model['weights']
     num_layers = len(weights)
     _, scores, activations, squash_derivatives = mlp_predict(data, model)
-
+    #print(len(weights))
+    
     # back propagation
     layer_errors = [None] * num_layers
     layer_gradients = [None] * num_layers
@@ -106,7 +107,7 @@ def mlp_objective(model, data, labels, loss_function):
     # compute objective value and gradient of the loss function
     objective, gradient = loss_function(scores, labels)
     layer_errors[-1] = gradient.reshape((1, -1))
-
+    #print(len(layer_errors))
     # back-propagate error to previous layers
     for i in reversed(range(num_layers - 1)):
         #######################################################################
@@ -116,8 +117,7 @@ def mlp_objective(model, data, labels, loss_function):
         # math, including our class slides). This computation should be about
         # 1--2 lines of code.
         #######################################################################
-        None # replace this with your code
-
+        layer_errors[i] = np.multiply(np.dot(weights[i+1].T, layer_errors[i+1]), squash_derivatives[i])
     # use computed errors to compute gradients for each layer
     for i in range(num_layers):
         #######################################################################
@@ -127,8 +127,13 @@ def mlp_objective(model, data, labels, loss_function):
         # the layer_errors you previously computed as well as other
         # information. This computation should be about 1--2 lines of code.
         #######################################################################
-        None # replace this with your code
-
+        #if i == 0:
+            #layer_gradients[i] = np.dot(layer_errors[i], data.T)
+            #print(layer_gradients[i].shape)
+       # else:
+        layer_gradients[i] = np.dot(layer_errors[i], activations[i].T)
+        #print(layer_gradients[i].shape)
+            
     return objective, layer_gradients
 
 
