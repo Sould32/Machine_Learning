@@ -48,7 +48,7 @@ def rbf_kernel(row_data, col_data, sigma):
     # (x - y).dot(x - y) = x.dot(x) + y.dot(y) - 2 * x.dot(y)
     #############################################
     inner_prod = np.dot(row_data, row_data) + np.dot(col_data, col_data) - 2 * np.dot(row_data, col_data)
-    return np.exp((-1/(2*sigma)) * inner_prod)
+    return np.exp((-1/(2*(sigma*sigma))) * np.norm(inner_prod))
 
 
 def linear_kernel(row_data, col_data):
