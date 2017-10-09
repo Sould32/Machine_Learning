@@ -23,7 +23,7 @@ def polynomial_kernel(row_data, col_data, order):
     #
     # This computation should take around 1--3 lines of code.
     #############################################
-    return None # replace this with your code
+    return np.power(np.dot(row_data.T, col_data), order)
 
 
 def rbf_kernel(row_data, col_data, sigma):
@@ -47,7 +47,8 @@ def rbf_kernel(row_data, col_data, sigma):
     # One hint on how to accomplish this is the fact that for vectors x, y
     # (x - y).dot(x - y) = x.dot(x) + y.dot(y) - 2 * x.dot(y)
     #############################################
-    return None # replace this with your code
+    inner_prod = np.dot(row_data, row_data) + np.dot(col_data, col_data) - 2 * np.dot(row_data, col_data)
+    return np.exp((-1/(2*sigma)) * inner_prod)
 
 
 def linear_kernel(row_data, col_data):
@@ -102,13 +103,17 @@ def kernel_svm_train(data, labels, params):
     # subject to    (eq_coeffs) x = (eq_constants)
     #   and         (lower_bounds) <= x <= (upper_bounds)
     ##########################################################################
-
-
+    hessian = np.multiply(gram_matrix, np.outer(labels, labels))
+    eq_constants = np.ones(1) * 0
+    eq_coeffs = labels
+    lower_bounds = np.ones(n) * 0
+    upper_bounds = np.ones(n) * params['C']
+    weights = np.ones(n)
     ###########################################################################
     # Call quadratic program with provided inputs.
     ############################################################################
     alphas = solve_quadprog(hessian, weights, eq_coeffs, eq_constants, None,
-                            None, lower_bounds, upper_bounds)
+                            None, lower_bounds.T, upper_bounds)
 
     model = dict()
 
@@ -161,7 +166,7 @@ def kernel_svm_predict(data, model):
     # Gram matrix, model.alphas, model.svLabels, and model.bias
     # (You should need no for loops. This can be done in 1--3 lines of code.)
     ########################################################################
-    scores = None # replace this with your code
+    scores = np.dot(gram_matrix, np.multiply(model['alphas'], model['sv_labels'])) + model['bias']
 
     #####################################################################
     # End of score computation
