@@ -23,7 +23,8 @@ def polynomial_kernel(row_data, col_data, order):
     #
     # This computation should take around 1--3 lines of code.
     #############################################
-    return np.power(np.dot(row_data.T, col_data), order)
+    
+    return np.power(np.dot(row_data.T, col_data)+1, order)
 
 
 def rbf_kernel(row_data, col_data, sigma):
@@ -47,8 +48,28 @@ def rbf_kernel(row_data, col_data, sigma):
     # One hint on how to accomplish this is the fact that for vectors x, y
     # (x - y).dot(x - y) = x.dot(x) + y.dot(y) - 2 * x.dot(y)
     #############################################
-    inner_prod = np.dot(row_data, row_data) + np.dot(col_data, col_data) - 2 * np.dot(row_data, col_data)
-    return np.exp((-1/(2*(sigma*sigma))) * np.norm(inner_prod))
+    #print("row_data: ", row_data.shape)
+    #print("col_data: ", col_data.shape)
+    #print("sigma: ", sigma)
+    sigma_square = sigma * sigma
+    #print("sigma_square: ", sigma_square)
+    Y = 1/(2*sigma_square)
+    #print("Y: ", Y)
+    row_prod = np.sum(np.multiply(row_data, row_data), 0)
+    #print("row_prod: ", row_prod.shape)
+    col_prod = np.sum(np.multiply(col_data, col_data), 0)
+    #print("col_prod: ", col_prod.shape)
+    row_plus_col = row_prod.T + col_prod
+    #print("row_plus_col: ", row_plus_col)
+    row_col_prod = np.dot(row_data.T, col_data)
+    #print("row_col_prod: ", row_col_prod.shape)
+    two_row_col_prod = 2 * row_col_prod
+    #print("two_row_col_prod: ", two_row_col_prod.shape)
+    inner_prod = (row_plus_col - two_row_col_prod)
+    #print("inner_prod: ", inner_prod.shape)
+    inner_exp = Y*inner_prod
+    #print("inner_exp: ", inner_exp.shape)
+    return np.exp(inner_exp)
 
 
 def linear_kernel(row_data, col_data):
