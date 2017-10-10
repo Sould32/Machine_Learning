@@ -55,10 +55,11 @@ def rbf_kernel(row_data, col_data, sigma):
     #print("sigma_square: ", sigma_square)
     Y = 1/(2*sigma_square)
     #print("Y: ", Y)
-    row_prod = np.sum(np.multiply(row_data, row_data), 0)
+    row_prod = np.sum(np.multiply(row_data, row_data), 0, keepdims = True)
     #print("row_prod: ", row_prod.shape)
-    col_prod = np.sum(np.multiply(col_data, col_data), 0)
+    col_prod = np.sum(np.multiply(col_data, col_data), 0, keepdims = True)
     #print("col_prod: ", col_prod.shape)
+    #print("col_prod: ", col_prod)
     row_plus_col = row_prod.T + col_prod
     #print("row_plus_col: ", row_plus_col)
     row_col_prod = np.dot(row_data.T, col_data)
@@ -69,7 +70,7 @@ def rbf_kernel(row_data, col_data, sigma):
     #print("inner_prod: ", inner_prod.shape)
     inner_exp = Y*inner_prod
     #print("inner_exp: ", inner_exp.shape)
-    return np.exp(inner_exp)
+    return np.exp(-(inner_exp))
 
 
 def linear_kernel(row_data, col_data):
