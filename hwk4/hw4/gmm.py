@@ -31,6 +31,7 @@ def gmm(data, num_clusters, plot=False):
     sigmas = []
 
     for i in range(num_clusters):
+        #np.eye(d) return a square diagonal matrix with d rows and ones on the diagonal.
         sigmas.append(np.eye(d))
 
     probs = np.ones(num_clusters) / num_clusters
@@ -47,12 +48,23 @@ def gmm(data, num_clusters, plot=False):
 
     for i in range(max_iters):
         membership = compute_membership_probs(data, means, sigmas, probs)
+        
 
         ###################################################################
         # Insert your code to update cluster prior, means, and covariances
         # (probs, means, sigma)
         ###################################################################
+        laten_var_probs = np.sum(membership, 1)
 
+        probs = laten_var_probs / n
+
+        means = np.dot(data, membership.T) / laten_var_probs
+
+        for i in range(num_clusters):
+            datmean = data - means[: , i].reshape([-1, 1])
+            probs_broadcast = membership[i, :] * datmean
+            sigmas[i] = (np.dot(probs_broadcast, datmean.T) / laten_var_probs[i]) + reg
+        
         ##################################################################
         # End of code to compute probs, means, and sigma
         ##################################################################
@@ -97,13 +109,21 @@ def compute_membership_probs(data, means, sigmas, probs):
 
     num_clusters = probs.size
 
-    membership = np.zeros((num_clusters, n))
+    numerators = np.zeros((num_clusters, n))
+
 
     ##############################################################
     # Insert your code to update cluster membership probabilities
     # for each data point
     ##############################################################
 
+    for i in range(num_clusters):
+        gaussian_likelihood = gaussian_ll(data, means[:,i], sigmas[i])
+        numerators[i,:] = np.log(probs[i]) + gaussian_likelihood
+
+    denominators = logsumexp(numerators, dim=0)
+
+    membership = np.exp(numerators - denominators)
 
     return membership
 
@@ -129,12 +149,20 @@ def gmm_ll(data, means, sigma, probs):
     num_clusters = probs.size
 
     d, n = data.shape
-
+    
+    
     ################################################################
     # Insert your code to compute the log-likelihood. You may
     # compute this using a loop over num_clusters, but you must not
     # loop over n. Use logsumexp to avoid numerical imprecision.
     ################################################################
+
+    #exp(log(probs[i]) +n )
+    prod = np.zeros((num_clusters, n))
+    for i in range(num_clusters):
+        prod[i,:] = np.log(probs[i]) + gaussian_ll(data, means[:,i], sigma[i])
+
+    ll = np.sum(logsumexp(prod))
 
     return ll
 
