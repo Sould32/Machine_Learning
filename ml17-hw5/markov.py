@@ -47,10 +47,6 @@ def train_markov_chain(sequences):
     for sequence in sequences:
         tokens = sequence.split()
         prior[tokens[0]] = prior.get(tokens[0], 0) + (1/len(sequences))
-    '''for token in all_tokens:
-        num_word = len([x for x in sequences if x.startswith(token)])
-        if num_word > 0:
-            prior[token] = num_word'''
     #print (all_tokens)
     #print ('helloo!')
     #print (sequences)
@@ -91,12 +87,18 @@ def train_markov_chain(sequences):
     trans_diction = {}
     for a,b in zip(new_data,new_data[1:]):                    # words by pairs
         trans_diction.setdefault(a,[]).append(b)             # list of the words following first
-    diction={k:dict(Counter(v)) for k,v in trans_diction.items() if len(v) > 0} 
+        
+    #print(trans_diction)
+    for k, v in trans_diction.items():
+        x = Counter(v)
+        total = sum(x.values(), 0.0)
+        for key in x:
+            x[key] /= total
+        trans_diction[k] = dict(x)
     ##################################################
     # End of 2 of 2
     #################################################
-    #print(diction)
-    transitions = diction
+    transitions = trans_diction
     model['transitions'] = transitions
 
     return model
@@ -135,27 +137,28 @@ def sample_markov_chain(model, num_sequences, max_length=500):
     # Be careful about appending strings to a list of strings. If done
     # incorrectly, you can accidentally append each character to the list.
     ####################################################################
-    keys = list(model['prior'].keys())
     transition =  model['transitions']
-    idx = 0;
     import random
+    sentence = []
     for i in range(num_sequences):
-        sequences.append(random.choice(keys))
-        cuurent_word = random.choice(keys)
-        idx += 1
+        start_word = sample_token(model['prior'])
+        sentence.append(start_word)
+        cuurent_word = start_word
         for j in range(max_length):
+            if (j == (max_length - 1)):
+                sentence.append('\n')
+                break
+                
             trans_word = random.choice(list(transition[cuurent_word].keys()))
             if (trans_word == '\n'):
-                sequences.append(trans_word)
-                break;
-            sequences.append(trans_word)
+                sentence.append(trans_word)
+                break
+            sentence.append(trans_word)
             cuurent_word = trans_word
+        sequences.append(sentence)
     #####################################################################
     # End of 1 of 1
     #####################################################################
-    print('#####################################################################')
-    print ('sure')
-    print (sequences)
     return sequences
 
 
@@ -205,3 +208,4 @@ def sample_token(token_probs):
     ordered_tokens, probabilities = zip(*token_probs.items())
     index = np.random.multinomial(1, probabilities).argmax()
     return ordered_tokens[index]
+
